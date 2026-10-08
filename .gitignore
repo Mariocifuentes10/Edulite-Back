@@ -1,0 +1,27 @@
+# Dependencias
+node_modules/
+
+# Base de datos embebida de desarrollo (npm run local)
+db/.datos-locales/
+
+# Base de datos embebida de pruebas e2e (npm run test:e2e)
+db/.datos-pruebas/
+
+# Entorno
+.env
+.env.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Cobertura y tests
+coverage/
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
