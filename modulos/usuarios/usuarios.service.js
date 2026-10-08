@@ -90,4 +90,56 @@ async function buscarParaLogin(email) {
   return rows[0] || null;
 }
 
-module.exports = { crear, buscarPorEmail, buscarPorId, buscarParaLogin };
+/**
+ * Lista usuarios paginados con filtro opcional por rol (panel de administración).
+ * Nunca devuelve password_hash.
+ *
+ * @param {Object} [opciones]
+ * @param {'ESTUDIANTE'|'TUTOR'|'ADMIN'|null} [opciones.rol] - null = todos
+ * @param {number} [opciones.pagina=1]
+ * @param {number} [opciones.limite=20]
+ * @returns {Promise<{ usuarios: Object[], total: number }>}
+ */
+async function listar({ rol = null, pagina = 1, limite = 20 } = {}) {
+  const offset = (pagina - 1) * limite;
+  const { rows } = await query(
+    `SELECT ${COLUMNAS_SEGURAS} FROM usuarios
+     WHERE ($1::rol_usuario IS NULL OR rol = $1::rol_usuario)
+     ORDER BY creado_en DESC, id DESC
+     LIMIT $2 OFFSET $3`,
+    [rol, limite, offset]
+  );
+  const { rows: conteo } = await query(
+    `SELECT COUNT(*)::int AS total FROM usuarios
+     WHERE ($1::rol_usuario IS NULL OR rol = $1::rol_usuario)`,
+    [rol]
+  );
+  return { usuarios: rows, total: conteo[0].total };
+}
+
+/**
+ * Suspende (activo=false) o reactiva (activo=true) a un usuario.
+ * El control de auto-suspensión vive en el controller (necesita req.user).
+ * Retorna null si el usuario no existe.
+ *
+ * @param {number} id
+ * @param {boolean} activo
+ * @returns {Promise<Object|null>} Usuario actualizado (columnas seguras)
+ */
+async function actualizarActivo(id, activo) {
+  const { rows } = await query(
+    `UPDATE usuarios SET activo = $2 WHERE id = $1
+     RETURNING ${COLUMNAS_SEGURAS}`,
+    [id, activo]
+  );
+  return rows[0] || null;
+}
+
+module.exports = {
+  crear,
+  buscarPorEmail,
+  buscarPorId,
+  buscarParaLogin,
+  listar,
+  actualizarActivo,
+};

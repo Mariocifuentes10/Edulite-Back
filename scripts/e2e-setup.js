@@ -8,6 +8,10 @@ const fs = require('fs');
 const path = require('path');
 const EmbeddedPostgres = require('embedded-postgres').default;
 
+// Entorno de pruebas: desactiva los rate-limiters (ver rate-limit.middleware.js).
+// Se fija aquí porque los workers heredan process.env del proceso main de Jest.
+process.env.NODE_ENV = 'test';
+
 const PUERTO = 55434;
 const BASE = 'edulite_pruebas';
 const DIR_DATOS = path.join(__dirname, '..', 'db', '.datos-pruebas');

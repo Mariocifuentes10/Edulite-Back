@@ -1,14 +1,4 @@
-/**
- * tests/auth.service.test.js
- * Tests unitarios de auth.service con la capa de base de datos mockeada.
- * Cubre el Definition of Done del Sprint 1:
- *   1. Registro exitoso
- *   2. Email duplicado -> 409
- *   3. Login inválido -> 401
- * Extra: registro con rol ADMIN -> 400 y ausencia de password_hash en respuestas.
- */
 
-// Mock de la capa de datos: los tests NO requieren PostgreSQL corriendo.
 jest.mock('../config/db', () => ({
   query: jest.fn(),
   pool: {},

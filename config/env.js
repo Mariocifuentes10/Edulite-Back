@@ -58,6 +58,11 @@ const BCRYPT_ROUNDS = (() => {
 
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:4200';
 
+// true cuando la API corre detrás de un proxy/contenedor: express-rate-limit
+// necesita confiar en X-Forwarded-For para contar por IP real.
+const TRUST_PROXY =
+  (process.env.TRUST_PROXY || 'false').trim().toLowerCase() === 'true';
+
 if (errores.length > 0) {
   console.error('\n❌ La aplicación no puede iniciar. Corrija las siguientes variables en .env:\n');
   errores.forEach((e) => console.error(`   • ${e}`));
@@ -71,6 +76,7 @@ module.exports = Object.freeze({
   ES_PRODUCCION: NODE_ENV === 'production',
   PORT,
   CORS_ORIGIN,
+  TRUST_PROXY,
   DATABASE_URL,
   JWT_SECRET,
   JWT_EXPIRES_IN,

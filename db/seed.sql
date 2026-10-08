@@ -1,7 +1,7 @@
 -- ============================================================================
--- EduLite — Datos semilla (Sprints 1 y 2)
--- 1 ADMIN + 1 TUTOR + 1 ESTUDIANTE demo, 2 cursos publicados y 4 lecciones
--- por curso.
+-- EduLite — Datos semilla (Sprints 1, 2 y 5)
+-- 1 ADMIN + 1 TUTOR + 1 ESTUDIANTE demo, 2 cursos publicados, 4 lecciones
+-- por curso y 3 tutorías de ejemplo (Sprint 5).
 --
 -- Contraseña de los 3 usuarios demo: EduLite123!
 -- (bcrypt cost 10 — regenerar hashes con:
@@ -12,7 +12,8 @@
 --   psql -d edulite -f db/seed.sql
 --
 -- Idempotente: re-ejecutar nunca duplica usuarios (ON CONFLICT sobre email),
--- cursos (UNIQUE id_tutor+titulo) ni lecciones (UNIQUE id_curso+orden).
+-- cursos (UNIQUE id_tutor+titulo), lecciones (UNIQUE id_curso+orden) ni
+-- tutorías (WHERE NOT EXISTS sobre tema, que es único en el seed).
 -- ============================================================================
 
 -- ---------- Usuarios demo ----------
@@ -97,3 +98,24 @@ JOIN (
 WHERE c.titulo = 'Lectura y comprensión'
   AND c.id_tutor = (SELECT id FROM usuarios WHERE email = 'tutor@edulite.test')
 ON CONFLICT (id_curso, orden) DO NOTHING;
+
+-- ---------- Tutorías demo (Sprint 5): una por estado operativo ----------
+-- Todas con fecha futura (CHECK fecha_futura) y entre los usuarios demo.
+-- Idempotente: NOT EXISTS sobre el tema, único en este seed.
+INSERT INTO tutorias (id_estudiante, id_tutor, id_curso, fecha, tema, estado)
+SELECT e.id,
+       t.id,
+       c.id,
+       v.fecha,
+       v.tema,
+       v.estado
+FROM (
+  VALUES
+    ('Repaso de fracciones', 'Matemáticas básicas', now() + interval '3 days', 'PENDIENTE'::estado_tutoria),
+    ('Preparación de la prueba de lectura', 'Lectura y comprensión', now() + interval '5 days', 'CONFIRMADA'::estado_tutoria),
+    ('Dudas con problemas de la vida diaria', 'Matemáticas básicas', now() + interval '7 days', 'REALIZADA'::estado_tutoria)
+) AS v(tema, titulo_curso, fecha, estado)
+JOIN usuarios e ON e.email = 'estudiante@edulite.test'
+JOIN usuarios t ON t.email = 'tutor@edulite.test'
+JOIN cursos c ON c.id_tutor = t.id AND c.titulo = v.titulo_curso
+WHERE NOT EXISTS (SELECT 1 FROM tutorias WHERE tema = v.tema);

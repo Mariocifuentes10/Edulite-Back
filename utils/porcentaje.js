@@ -14,13 +14,19 @@
  *                             favorable. SIEMPRE una constante del código
  *                             (ej: 'p.completada', 'r.correcta'); jamás entra
  *                             desde el cliente.
+ * @param {string} [total] - Expresión del denominador. Por defecto COUNT(*);
+ *                             se pasa solo cuando el WHERE de la consulta
+ *                             genera filas que no son "casos totales" (p. ej.
+ *                             'COUNT(l.id)' con LEFT JOIN de lecciones).
  * @returns {string} expresión SQL lista para usar en un SELECT agregado
  */
-function sqlPorcentaje(condicion) {
+function sqlPorcentaje(condicion, total = 'COUNT(*)') {
   return (
     'COALESCE(ROUND(100.0 * COUNT(*) FILTER (WHERE ' +
     condicion +
-    ') / NULLIF(COUNT(*), 0)), 0)::int'
+    ') / NULLIF(' +
+    total +
+    ', 0)), 0)::int'
   );
 }
 

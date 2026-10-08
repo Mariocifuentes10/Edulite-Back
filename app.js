@@ -6,12 +6,14 @@
 const express = require('express');
 const cors = require('cors');
 const compression = require('compression');
+const helmet = require('helmet');
 
 const env = require('./config/env');
 const { montarSwagger } = require('./config/swagger');
 
 const noEncontrado = require('./middlewares/not-found.middleware');
 const manejarErrores = require('./middlewares/error.middleware');
+const { limitadorGlobal } = require('./middlewares/rate-limit.middleware');
 
 const authRoutes = require('./modulos/auth/auth.routes');
 const cursosRoutes = require('./modulos/cursos/cursos.routes');
@@ -25,8 +27,24 @@ const {
 } = require('./modulos/evaluaciones/evaluaciones.routes');
 const progresoRoutes = require('./modulos/progreso/progreso.routes');
 const syncRoutes = require('./modulos/sync/sync.routes');
+const tutoriasRoutes = require('./modulos/tutorias/tutorias.routes');
+const adminRoutes = require('./modulos/admin/admin.routes');
 
 const app = express();
+
+// ---------- Seguridad ----------
+// Cabeceras seguras. Se desactiva la CSP porque la UI de Swagger
+// (swagger-ui-express) usa scripts/estilos inline y una CSP por defecto la rompe.
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  })
+);
+// Detrás de proxy/contenedor: confiar en X-Forwarded-For para contar por IP real.
+if (env.TRUST_PROXY) {
+  app.set('trust proxy', 1);
+}
 
 // ---------- Middlewares globales ----------
 app.use(cors({ origin: env.CORS_ORIGIN, credentials: false }));
@@ -42,6 +60,9 @@ app.disable('x-powered-by');
 montarSwagger(app);
 
 // ---------- Rutas de la API ----------
+// Límite global por IP para toda la API (desactivado en tests).
+app.use('/api', limitadorGlobal);
+
 app.get('/api/salud', (req, res) => {
   res.json({ success: true, data: { estado: 'ok' }, message: 'API EduLite funcionando' });
 });
@@ -55,7 +76,9 @@ app.use('/api/evaluaciones', evaluacionesPropias);
 app.use('/api/progreso', progresoRoutes);
 app.use('/api/sync', syncRoutes);
 app.use('/api/tutores', tutoresRoutes);
+app.use('/api/tutorias', tutoriasRoutes);
 app.use('/api/estudiantes', estudiantesRoutes);
+app.use('/api/admin', adminRoutes);
 
 // ---------- 404 y manejo de errores (siempre al final) ----------
 app.use('/api', noEncontrado);

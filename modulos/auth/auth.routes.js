@@ -7,6 +7,10 @@ const { Router } = require('express');
 
 const asyncHandler = require('../../utils/async-handler');
 const validar = require('../../middlewares/validar.middleware');
+const {
+  limitadorLogin,
+  limitadorRegistro,
+} = require('../../middlewares/rate-limit.middleware');
 const { authMiddleware } = require('../../middlewares/auth.middleware');
 
 const { validacionesRegistro, validacionesLogin } = require('./auth.validators');
@@ -63,6 +67,7 @@ const router = Router();
  */
 router.post(
   '/register',
+  limitadorRegistro,
   validacionesRegistro,
   validar,
   asyncHandler(authController.register)
@@ -104,6 +109,7 @@ router.post(
  */
 router.post(
   '/login',
+  limitadorLogin,
   validacionesLogin,
   validar,
   asyncHandler(authController.login)
